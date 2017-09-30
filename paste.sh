@@ -92,7 +92,7 @@ if [[ -z "$LNG" ]]; then
   esac
 fi
 
-URL=$(tr -d "\r" 0<"$DATA" | perl -pe 'chomp if eof' | curl -s -d lang=${LNG:-text} -d private=1 -d expire=$EXPIRE --data-urlencode text@- "https://pbin.cf/api/create?apikey=$(<${HOME}/.stikked)" | sed 's#/view##')
+URL=$(tr -d "\r" 0<"$DATA" | perl -pe 'chomp if eof' | curl -s -d lang=${LNG:-text} -d private=1 -d expire=$EXPIRE --data-urlencode text@- "https://pbin.cf/api/create?apikey=${APIKEY}" | sed 's#/view##')
 if [[ -n "$XCLIP" ]]; then
    printf "%s" "$URL" | xclip -selection clipboard
 fi
