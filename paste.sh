@@ -1,15 +1,29 @@
 #!/bin/bash
 
-if [[ -s "${HOME}/.stikked" ]]; then
-  APIKEY=$(awk -F '=' '$1 == "apikey" { print $2 }' ${HOME}/.stikked)
-  if [[ -z "$APIKEY" || $APIKEY =~ [[:cntrl:]]|[[:space:]] ]]; then
-    echo "Bad API key read from '${HOME}/.stikked' file. Please note that no spaces, '=' or control characters are allowed."
-    echo "Format: apikey=your_key"
+check_conf_val() {
+  if [[ -z "$2" || $2 =~ [[:cntrl:]]|[[:space:]] ]]; then
+    echo "Bad $1 read from '${HOME}/.stikked' file."
     exit 1
   fi
+}
+
+if [[ -s "${HOME}/.stikked" ]]; then
+  BASEURL=$(awk -F '=' '$1 == "base_url" { print $2 }' ${HOME}/.stikked)
+  APIKEY=$(awk -F '=' '$1 == "api_key" { print $2 }' ${HOME}/.stikked)
+  EXPIRE=$(awk -F '=' '$1 == "expire" && $2 ~ /^[0-9]+$/ { print $2 }' ${HOME}/.stikked)
+  PRIVATE=$(awk -F '=' '$1 == "private" && $2 ~ /^[01]$/ { print $2 }' ${HOME}/.stikked)
+  STRIP=$(awk -F '=' '$1 == "strip_url" && $2 ~ /^[yn]$/ { print $2 }' ${HOME}/.stikked)
+  check_conf_val 'server url' "$BASEURL"
+  if [[ "${BASEURL:${#BASEURL}-1}" != '/' ]]; then
+    BASEURL="${BASEURL}/"
+  fi
+  APIURL="${BASEURL}api/create"
+  if [[ -n "$APIKEY" ]]; then
+    check_conf_val 'API key' "$APIKEY"
+    APIURL="${APIURL}?apikey=${APIKEY}"
+  fi
 else
-  echo "Please put your API key into '${HOME}/.stikked' file."
-  echo "Format: apikey=your_key"
+  echo "Please create '${HOME}/.stikked' file with your settings."
   exit 1
 fi
 
@@ -21,10 +35,11 @@ for TOOL in tr mktemp file perl curl; do
 done
 
 LNG=''
-EXPIRE=$((($(date -d '1 year' +%s) - $(date +%s)) / 60))
-
 XCLIP=''
 XCLIPMSG=''
+DATA=''
+DEXT=''
+
 if [[ -n "$DISPLAY" ]]; then
   XCLIP=$(which xclip)
   if [[ -n "$XCLIP" ]]; then
@@ -33,9 +48,6 @@ if [[ -n "$DISPLAY" ]]; then
     XCLIPMSG=" (consider installing xclip to have links copied to clipboard)"
   fi
 fi
-
-DATA=''
-DEXT=''
 
 if [[ -n "$1" ]]; then
   if [[ -r "$1" ]]; then
@@ -92,7 +104,10 @@ if [[ -z "$LNG" ]]; then
   esac
 fi
 
-URL=$(tr -d "\r" 0<"$DATA" | perl -pe 'chomp if eof' | curl -s -d lang=${LNG:-text} -d private=1 -d expire=$EXPIRE --data-urlencode text@- "https://pbin.cf/api/create?apikey=${APIKEY}" | sed 's#/view##')
+URL=$(tr -d "\r" 0<"$DATA" | perl -pe 'chomp if eof' | curl -s -d lang=${LNG:-text} -d private=${PRIVATE:-1} -d expire=${EXPIRE:-525600} --data-urlencode text@- "$APIURL")
+if [[ $STRIP =~ ^(y|yes)$ ]]; then
+  URL=${URL/\/view/}
+fi
 if [[ -n "$XCLIP" ]]; then
    printf "%s" "$URL" | xclip -selection clipboard
 fi
