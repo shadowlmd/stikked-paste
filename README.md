@@ -1,5 +1,5 @@
 # stikked-paste
-Another command line client for Stikked
+### Another command line client for [Stikked](https://github.com/claudehohl/Stikked)
 
 It will try to detect language of pasted content and copy link to clipboard.
 
