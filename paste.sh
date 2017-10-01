@@ -50,7 +50,9 @@ if [[ -n "$DISPLAY" ]]; then
 fi
 
 if [[ -n "$1" ]]; then
-  if [[ -r "$1" ]]; then
+  if [[ $1 == 'js' ]]; then
+    LNG='javascript'
+  elif [[ -r "$1" ]]; then
     DATA="$1"
   else
     LNG=$1
@@ -58,7 +60,7 @@ if [[ -n "$1" ]]; then
 fi
 
 if [[ -n "$DATA" ]]; then
-  if [[ ${DATA##*/} =~ "." ]]; then
+  if [[ ${DATA##*/} =~ \. ]]; then
     DEXT=${DATA##*.}
   fi
 else
@@ -91,15 +93,17 @@ if [[ -n "$DEXT" ]]; then
 fi
 
 if [[ -z "$LNG" ]]; then
-  CT=$(file -L -b --mime-type "$DATA")
+  CT=$(file -Lb --mime-type "$DATA")
   case "$CT" in
     (text/x-shellscript) LNG='bash';;
     (text/x-perl) LNG='perl';;
     (text/x-python) LNG='python';;
+    (text/x-pascal) LNG='pascal';;
     (text/html) LNG='html5';;
     (text/plain) LNG='text';;
     (text/x-php) LNG='php';;
     (text/x-diff) LNG='diff';;
+    (text/xml) LNG='xml';;
     (text/x-c) LNG='c';;
   esac
 fi
