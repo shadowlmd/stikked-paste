@@ -104,7 +104,16 @@ if [[ -z "$LNG" ]]; then
     (text/x-php) LNG='php';;
     (text/x-diff) LNG='diff';;
     (text/xml) LNG='xml';;
+    (text/x-c++) LNG='cpp';;
+    (text/x-objective-c) LNG='objc';;
     (text/x-c) LNG='c';;
+    (text/x-lisp) LNG='lisp';;
+    (text/x-ruby) LNG='ruby';;
+    (text/x-lua) LNG='lua';;
+    (text/x-tcl) LNG='tcl';;
+    (text/x-asm) LNG='asm';;
+    (text/x-makefile) LNG='make';;
+    (text/x-msdos-batch) LNG='dos';;
   esac
 fi
 
