@@ -1,8 +1,12 @@
 #!/bin/bash
 
+notice() {
+  echo "$*" 1>&2
+}
+
 check_conf_val() {
   if [[ -z "$2" || $2 =~ [[:cntrl:]]|[[:space:]] ]]; then
-    echo "Bad $1 read from '${HOME}/.stikked' file."
+    notice "Bad $1 read from '${HOME}/.stikked' file."
     exit 1
   fi
 }
@@ -23,13 +27,13 @@ if [[ -s "${HOME}/.stikked" ]]; then
     APIURL="${APIURL}?apikey=${APIKEY}"
   fi
 else
-  echo "Please create '${HOME}/.stikked' file with your settings."
+  notice "Please create '${HOME}/.stikked' file with your settings."
   exit 1
 fi
 
 for TOOL in tr mktemp file perl curl; do
   if [[ -z "$(which $TOOL)" ]]; then
-    echo "Please install '$TOOL' to make ${0##*/} work."
+    notice "Please install '$TOOL' to make ${0##*/} work."
     exit 1
   fi
 done
@@ -49,15 +53,32 @@ if [[ -n "$DISPLAY" ]]; then
   fi
 fi
 
-if [[ -n "$1" ]]; then
-  if [[ $1 == 'js' ]]; then
-    LNG='javascript'
+while [[ $# -gt 0 ]]; do
+  if [[ $1 =~ ^(-p|-f|--permanent|--forever)$ ]]; then
+    EXPIRE=0
+  elif [[ $1 =~ ^--private$ ]]; then
+    PRIVATE='1'
+  elif [[ $1 =~ ^(-l|--lang(uage)?)$ ]]; then
+    LNG=$2
+    shift
+  elif [[ $1 =~ ^(-e|--exp(ire)?)$ ]]; then
+    if [[ $2 =~ ^[0-9]+$ ]]; then
+      EXPIRE=$2
+    else
+      notice "Bad expiration value: '$2'"
+    fi
+    shift
+  elif [[ $1 =~ ^- ]]; then
+    notice "Bad argument: $1"
   elif [[ -r "$1" ]]; then
     DATA="$1"
+  elif [[ $1 == 'js' ]]; then
+    LNG='javascript'
   else
     LNG=$1
   fi
-fi
+  shift
+done
 
 if [[ -n "$DATA" ]]; then
   if [[ ${DATA##*/} =~ \. ]]; then
@@ -66,7 +87,7 @@ if [[ -n "$DATA" ]]; then
 else
   TMPF=$(mktemp)
   if [[ -z "$TMPF" || ! -w "$TMPF" ]]; then
-    echo "Failed to create temp file. Please make sure 'mktemp' works."
+    notice "Failed to create temp file. Please make sure 'mktemp' works."
     exit 1
   fi
   trap "rm -f '$TMPF'" EXIT

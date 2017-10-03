@@ -1,14 +1,14 @@
-# base url for Stikked site
+# base url
 base_url=http://paste.scratchbook.ch/
 
-# API key, if needed
+# API key, if required
 #api_key=your_api_key
 
-# make your pastese private; can be 1 or 0
-private=1
+# make all pastes private
+#private=1
 
-# paste expiration in minutes
+# default paste expiration in minutes
 expire=525600
 
-# strip "/view" from urls; nice when you have rewrite rules for short form
+# strip "/view" from urls; useful when you have rewrite rules for short form
 strip_url=y
