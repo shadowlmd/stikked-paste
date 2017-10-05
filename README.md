@@ -6,8 +6,8 @@ It will try to detect language of pasted content and copy link to clipboard.
 Reads configuration from `$HOME/.stikked` file. Example can be found in this repo.
 
 Usage examples:
-* `some-command | paste.sh [language]`
-* `paste.sh [/path/to/]some-file`
+* `some-command | stikked.sh [language]`
+* `stikked.sh [/path/to/]some-file`
 
 Optional arguments:
 * `-l|--lang|--language <language>`
