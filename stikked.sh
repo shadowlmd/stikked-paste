@@ -56,7 +56,7 @@ fi
 while [[ $# -gt 0 ]]; do
   if [[ $1 =~ ^(-p|-f|--permanent|--forever)$ ]]; then
     EXPIRE=0
-  elif [[ $1 =~ ^--private$ ]]; then
+  elif [[ $1 == '--private' ]]; then
     PRIVATE='1'
   elif [[ $1 =~ ^(-l|--lang(uage)?)$ ]]; then
     LNG=$2
@@ -68,6 +68,9 @@ while [[ $# -gt 0 ]]; do
       notice "Bad expiration value: '$2'"
     fi
     shift
+  elif [[ $1 == '--noclip' ]]; then
+    XCLIP=''
+    XCLIPMSG=''
   elif [[ $1 =~ ^- ]]; then
     notice "Bad argument: $1"
   elif [[ -r "$1" ]]; then
@@ -139,10 +142,21 @@ if [[ -z "$LNG" ]]; then
 fi
 
 URL=$(tr -d "\r" 0<"$DATA" | perl -pe 'chomp if eof' | curl -s -d lang=${LNG:-text} -d private=${PRIVATE:-1} -d expire=${EXPIRE:-525600} --data-urlencode text@- "$APIURL")
+
+if [[ ! $? -eq 0 ]]; then
+  notice "Failed to fetch URL."
+  exit 1
+elif [[ ! $URL =~ ^${BASEURL} ]]; then
+  notice "Fail: $URL"
+  exit 1
+fi
+
 if [[ $STRIP =~ ^(y|yes)$ ]]; then
   URL=${URL/\/view/}
 fi
+
 if [[ -n "$XCLIP" ]]; then
    printf "%s" "$URL" | xclip -selection clipboard
 fi
+
 echo "${URL}${XCLIPMSG}"

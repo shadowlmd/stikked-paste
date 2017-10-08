@@ -14,3 +14,4 @@ Optional arguments:
 * `-e|--expire <expiration>`
 * `-p|-f|--permanent|--forever`
 * `--private`
+* `--noclip`
