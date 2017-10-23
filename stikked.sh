@@ -1,13 +1,13 @@
 #!/bin/bash
 
-notice() {
+die() {
   echo "$*" 1>&2
+  exit 1
 }
 
 check_conf_val() {
   if [[ -z "$2" || $2 =~ [[:cntrl:]]|[[:space:]] ]]; then
-    notice "Bad $1 read from '${HOME}/.stikked' file."
-    exit 1
+    die "Bad $1 read from '${HOME}/.stikked' file."
   fi
 }
 
@@ -27,14 +27,12 @@ if [[ -s "${HOME}/.stikked" ]]; then
     APIURL="${APIURL}?apikey=${APIKEY}"
   fi
 else
-  notice "Please create '${HOME}/.stikked' file with your settings."
-  exit 1
+  die "Please create '${HOME}/.stikked' file with your settings."
 fi
 
 for TOOL in tr mktemp file perl curl; do
   if [[ -z "$(which $TOOL)" ]]; then
-    notice "Please install '$TOOL' to make ${0##*/} work."
-    exit 1
+    die "Please install '$TOOL' to make ${0##*/} work."
   fi
 done
 
@@ -61,18 +59,18 @@ while [[ $# -gt 0 ]]; do
   elif [[ $1 =~ ^(-l|--lang(uage)?)$ ]]; then
     LNG=$2
     shift
-  elif [[ $1 =~ ^(-e|--exp(ire)?)$ ]]; then
+  elif [[ $1 =~ ^(-t|-e|--exp(ire)?)$ ]]; then
     if [[ $2 =~ ^[0-9]+$ ]]; then
       EXPIRE=$2
     else
-      notice "Bad expiration value: '$2'"
+      die "Bad expiration value: '$2'"
     fi
     shift
   elif [[ $1 == '--noclip' ]]; then
     XCLIP=''
     XCLIPMSG=''
   elif [[ $1 =~ ^- ]]; then
-    notice "Bad argument: $1"
+    die "Bad argument: $1"
   elif [[ -r "$1" ]]; then
     DATA="$1"
   elif [[ $1 == 'js' ]]; then
@@ -90,8 +88,7 @@ if [[ -n "$DATA" ]]; then
 else
   TMPF=$(mktemp)
   if [[ -z "$TMPF" || ! -w "$TMPF" ]]; then
-    notice "Failed to create temp file. Please make sure 'mktemp' works."
-    exit 1
+    die "Failed to create temp file. Please make sure 'mktemp' works."
   fi
   trap "rm -f '$TMPF'" EXIT
   cat 1>"$TMPF"
@@ -144,11 +141,9 @@ fi
 URL=$(tr -d "\r" 0<"$DATA" | perl -pe 'chomp if eof' | curl -s -d lang=${LNG:-text} -d private=${PRIVATE:-1} -d expire=${EXPIRE:-525600} --data-urlencode text@- "$APIURL")
 
 if [[ ! $? -eq 0 ]]; then
-  notice "Failed to fetch URL."
-  exit 1
+  die "Failed to fetch URL."
 elif [[ ! $URL =~ ^${BASEURL} ]]; then
-  notice "Fail: $URL"
-  exit 1
+  die "Fail: $URL"
 fi
 
 if [[ $STRIP =~ ^(y|yes)$ ]]; then
