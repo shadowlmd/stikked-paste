@@ -1,7 +1,11 @@
 #!/bin/bash
 
-die() {
+notice() {
   echo "$*" 1>&2
+}
+
+die() {
+  notice "$*"
   exit 1
 }
 
@@ -30,7 +34,7 @@ else
   die "Please create '${HOME}/.stikked' file with your settings."
 fi
 
-for TOOL in tr mktemp file perl curl; do
+for TOOL in tr mktemp file perl curl python; do
   if [[ -z "$(which $TOOL)" ]]; then
     die "Please install '$TOOL' to make ${0##*/} work."
   fi
@@ -76,7 +80,11 @@ while [[ $# -gt 0 ]]; do
   elif [[ $1 == 'js' ]]; then
     LNG='javascript'
   else
-    LNG=$1
+    if grep -wq $1 <<< "$(curl -s ${APIURL/\/create/\/langs} | python -m json.tool | awk -F '"' '{ print $2 }')"; then
+      LNG=$1
+    else
+      notice "Skipped invalid argument: $1"
+    fi
   fi
   shift
 done
