@@ -11,26 +11,30 @@ die() {
 
 check_conf_val() {
   if [[ -z "$2" || $2 =~ [[:cntrl:]]|[[:space:]] ]]; then
-    die "Bad $1 read from '${HOME}/.stikked' file."
+    die "Bad $1 read from '$CONFIG' file."
   fi
 }
 
-if [[ -s "${HOME}/.stikked" ]]; then
-  BASEURL=$(awk -F '=' '$1 == "base_url" { print $2 }' ${HOME}/.stikked)
-  APIKEY=$(awk -F '=' '$1 == "api_key" { print $2 }' ${HOME}/.stikked)
-  EXPIRE=$(awk -F '=' '$1 == "expire" && $2 ~ /^[0-9]+$/ { print $2 }' ${HOME}/.stikked)
-  PRIVATE=$(awk -F '=' '$1 == "private" && $2 ~ /^[01]$/ { print $2 }' ${HOME}/.stikked)
-  STRIP=$(awk -F '=' '$1 == "strip_url" && $2 ~ /^[yn]$/ { print $2 }' ${HOME}/.stikked)
-  check_conf_val 'server url' "$BASEURL"
-  if [[ "${BASEURL:${#BASEURL}-1}" != '/' ]]; then
-    BASEURL="${BASEURL}/"
+for CONFIG in /etc/stikked/stikkedrc ${HOME}/.stikked; do
+  if [[ -s "$CONFIG" ]]; then
+    BASEURL=$(awk -F '=' '$1 == "base_url" { print $2 }' $CONFIG)
+    APIKEY=$(awk -F '=' '$1 == "api_key" { print $2 }' $CONFIG)
+    EXPIRE=$(awk -F '=' '$1 == "expire" && $2 ~ /^[0-9]+$/ { print $2 }' $CONFIG)
+    PRIVATE=$(awk -F '=' '$1 == "private" && $2 ~ /^[01]$/ { print $2 }' $CONFIG)
+    STRIP=$(awk -F '=' '$1 == "strip_url" && $2 ~ /^[yn]$/ { print $2 }' $CONFIG)
+    check_conf_val 'server url' "$BASEURL"
+    if [[ "${BASEURL:${#BASEURL}-1}" != '/' ]]; then
+      BASEURL="${BASEURL}/"
+    fi
+    APIURL="${BASEURL}api/create"
+    if [[ -n "$APIKEY" ]]; then
+      check_conf_val 'API key' "$APIKEY"
+      APIURL="${APIURL}?apikey=${APIKEY}"
+    fi
   fi
-  APIURL="${BASEURL}api/create"
-  if [[ -n "$APIKEY" ]]; then
-    check_conf_val 'API key' "$APIKEY"
-    APIURL="${APIURL}?apikey=${APIKEY}"
-  fi
-else
+done
+
+if [[ -z "$BASEURL" ]]; then
   die "Please create '${HOME}/.stikked' file with your settings."
 fi
 
