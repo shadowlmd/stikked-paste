@@ -44,11 +44,7 @@ for TOOL in tr mktemp file perl curl python; do
     fi
 done
 
-LNG=''
-XCLIP=''
-XCLIPMSG=''
-DATA=''
-DEXT=''
+unset DATA DEXT LNG XCLIP XCLIPMSG
 
 if [[ -n "$DISPLAY" ]]; then
     XCLIP=$(which xclip)
@@ -68,7 +64,7 @@ while [[ $# -gt 0 ]]; do
         LNG=$2
         shift
     elif [[ $1 =~ ^(-t|-e|--exp(ire)?)$ ]]; then
-        if [[ $2 =~ ^[0-9]+$ ]]; then
+        if [[ $2 =~ ^([0-9]+|burn)$ ]]; then
             EXPIRE=$2
         else
             die "Bad expiration value: '$2'"
@@ -150,11 +146,18 @@ if [[ -z "$LNG" ]]; then
     esac
 fi
 
-URL=$(tr -d "\r" 0<"$DATA" | perl -pe 'chomp if eof' | curl -s -d lang=${LNG:-text} -d private=${PRIVATE:-1} -d expire=${EXPIRE:-525600} --data-urlencode text@- "$APIURL")
+URL=$(tr -d "\r" 0<"$DATA" | perl -pe 'chomp if eof' | curl -s -d lang=${LNG:-text} -d private=${PRIVATE:-1} ${EXPIRE+-d expire=$EXPIRE} --data-urlencode text@- "$APIURL")
 
 if [[ ! $? -eq 0 ]]; then
     die "Failed to fetch URL."
-elif [[ ! $URL =~ ^${BASEURL} ]]; then
+fi
+
+if [[ $URL =~ value=.*${BASEURL} ]]; then
+    URL=$(grep -m 1 "value=" <<< "$URL" | sed 's/.*value="//g' | sed 's/".*//g')
+    EXPIRE=burn
+fi
+
+if [[ ! $URL =~ ^${BASEURL} ]]; then
     die "Fail: $URL"
 fi
 
@@ -166,4 +169,10 @@ if [[ -n "$XCLIP" ]]; then
      printf "%s" "$URL" | xclip -selection clipboard
 fi
 
-echo "${URL}${XCLIPMSG}"
+if [[ "$EXPIRE" == 'burn' ]]; then
+    EXPIREMSG=" (will be deleted after first read)"
+else
+    unset EXPIREMSG
+fi
+
+echo "${URL}${EXPIREMSG}${XCLIPMSG}"
