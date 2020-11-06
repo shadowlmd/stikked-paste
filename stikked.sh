@@ -15,6 +15,10 @@ check_conf_val() {
     fi
 }
 
+check_lang() {
+    curl -s ${APIURL/\/create/\/langs} | jq -r 'keys_unsorted[]' | grep -wq $1
+}
+
 for CONFIG in /etc/stikked/stikkedrc ${HOME}/.stikked; do
     if [[ -s "$CONFIG" ]]; then
         BASEURL=$(awk -F '=' '$1 == "base_url" { print $2 }' $CONFIG)
@@ -38,7 +42,7 @@ if [[ -z "$BASEURL" ]]; then
     die "Please create '${HOME}/.stikked' file with your settings."
 fi
 
-for TOOL in tr mktemp file perl curl python; do
+for TOOL in tr mktemp file perl curl jq; do
     if [[ -z "$(which $TOOL)" ]]; then
         die "Please install '$TOOL' to make ${0##*/} work."
     fi
@@ -61,6 +65,7 @@ while [[ $# -gt 0 ]]; do
     elif [[ $1 == '--private' ]]; then
         PRIVATE='1'
     elif [[ $1 =~ ^(-l|--lang(uage)?)$ ]]; then
+        check_lang $2 || die "Unsupported language: $2"
         LNG=$2
         shift
     elif [[ $1 =~ ^(-t|-e|--exp(ire)?)$ ]]; then
@@ -80,10 +85,10 @@ while [[ $# -gt 0 ]]; do
     elif [[ $1 == 'js' ]]; then
         LNG='javascript'
     else
-        if grep -wq $1 <<< "$(curl -s ${APIURL/\/create/\/langs} | python -m json.tool | awk -F '"' '{ print $2 }')"; then
+        if check_lang $1; then
             LNG=$1
         else
-            notice "Skipped invalid argument: $1"
+            die "Bad argument: $1"
         fi
     fi
     shift
